@@ -7,7 +7,8 @@ function cachingDecoratorNew(func) {
     if (idx !== -1) {
       console.log("Из кэша: " + cache[idx].value);
        return "Из кэша: " + cache[idx].value;
-    } else {
+    } 
+
       let result = func(...args);
       cache.push({hash: hash, value: result});
       if (cache.length > 5) {
@@ -15,54 +16,53 @@ function cachingDecoratorNew(func) {
       }
       console.log("Вычисляем: " + result);
       return "Вычисляем: " + result;
-    }
+    
   }
   return wrapper
 }
 
 
 function debounceDecoratorNew(func, ms) {
-  let isThrottled = false,
-  savedArgs,
-  savedThis;
-
+  let timeout;
+  let _isRunning = false;
   function wrapper(...args) {
-    savedArgs = args;
-    savedThis = this;
-    if (isThrottled) {
+    wrapper.count += 1;
+    console.log(`Общее количество вызовов ${wrapper.count}`);
+    if(!_isRunning) {
+      func.call(this, ...args);  
+      _isRunning = true;
+    }
+    else {
+      console.log('Сигнал проигнорирован');
       return;
     }
-
-    func.apply(this, savedArgs);
-    isThrottled = true;
-    setTimeout(() => {
-      isThrottled = false;
+    // one timout for interval from first call
+    timeout = setTimeout(() => {            
+      _isRunning = false;              
     }, ms);
-  };
-  return wrapper
+  }
+  wrapper.count = 0;  
+  return wrapper;
   
 }
 
 function debounceDecorator2(func) {
-  let isThrottled = false,
-  savedArgs,
-  savedThis;
+  let timerId;
+    let isCooldown = true;
+    wrapper.count = 0;
 
-  function wrapper(...args) {
-    savedArgs = args;
-    savedThis = this;
-    wrapper.count += 1;
-    if (isThrottled) {
-      return;
-    }
-
-    func.apply(this, savedArgs);
-    isThrottled = true;
-
-    setTimeout(() => {
-      isThrottled = false;
-    }, ms);
-  };
-  wrapper.count = 0;
-  return wrapper;
+    function wrapper(...args) {
+        if (isCooldown) {
+            isCooldown = false;
+            func.apply(this, ...args);
+            return;
+        }
+        wrapper.count++;
+        clearTimeout(timerId);
+        console.log('Пропуск');
+        timerId = setTimeout(() => {
+            func.apply(this, args);
+        }, ms);
+    };
+    return wrapper;
 }
